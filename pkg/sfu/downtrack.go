@@ -1107,7 +1107,8 @@ func (d *DownTrack) writeBlankFrameRTP(duration float32, generation uint32) chan
 			writeBlankFrame = d.writeVP8BlankFrame
 		case "video/h264":
 			writeBlankFrame = d.writeH264BlankFrame
-			// TODO: writeH265BlankFrame
+		case "video/h265":
+			writeBlankFrame = d.writeH265BlankFrame
 		default:
 			close(done)
 			return
@@ -1240,6 +1241,27 @@ func (d *DownTrack) writeH264BlankFrame(hdr *rtp.Header, frameEndNeeded bool) (i
 	// TODO - Jie Zeng
 	// now use STAP-A to compose sps, pps, idr together, most decoder support packetization-mode 1.
 	// if client only support packetization-mode 0, use single nalu unit packet
+	buf := make([]byte, 1462)
+	offset := 0
+	buf[0] = 0x18 // STAP-A
+	offset++
+	for _, payload := range H264KeyFrame2x2 {
+		binary.BigEndian.PutUint16(buf[offset:], uint16(len(payload)))
+		offset += 2
+		copy(buf[offset:offset+len(payload)], payload)
+		offset += len(payload)
+	}
+	payload := buf[:offset]
+	_, err := d.writeStream.WriteRTP(hdr, payload)
+	if err == nil {
+		d.rtpStats.Update(hdr, len(payload), 0, time.Now().UnixNano())
+	}
+	return hdr.MarshalSize() + offset, err
+}
+
+func (d *DownTrack) writeH265BlankFrame(hdr *rtp.Header, frameEndNeeded bool) (int, error) {
+	// TODO - andres:
+	// Check if frames are the same
 	buf := make([]byte, 1462)
 	offset := 0
 	buf[0] = 0x18 // STAP-A

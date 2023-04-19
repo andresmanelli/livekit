@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/livekit/protocol/logger"
+	"github.com/pion/rtp/codecs"
 )
 
 var (
@@ -291,6 +292,49 @@ func IsH264KeyFrame(payload []byte) bool {
 		}
 		return payload[1]&0x1F == 7
 	}
+	return false
+}
+
+// -------------------------------------
+
+func isIDRNALU(p *codecs.H265Packet) bool {
+	return p.Header().Type() == codecs.H265IDRNNALUType || p.Header().Type() == codecs.H265IDRWNALUType
+}
+
+func IsH265KeyFrame(payload []byte) bool {
+	if len(payload) < 2 {
+		return false
+	}
+
+	p := &codecs.H265Packet{}
+	p.Unmarshal(payload)
+
+	if isIDRNALU(p) {
+		return true
+	} else if p.Header().IsAggregationPacket() {
+		pa := p.Packet().(*codecs.H265AggregationPacket)
+		p.Unmarshal(pa.FirstUnit().NalUnit())
+		if isIDRNALU(p) {
+			return true
+		}
+
+		for _, v := range pa.OtherUnits() {
+			p.Unmarshal(v.NalUnit())
+			if isIDRNALU(p) {
+				return true
+			}
+		}
+
+		return false
+	} else if p.Header().IsFragmentationUnit() {
+		fu := p.Packet().(*codecs.H265FragmentationUnitPacket)
+		if !fu.FuHeader().S() {
+			return false
+		} else {
+			return fu.FuHeader().FuType() == codecs.H265IDRNNALUType || fu.FuHeader().FuType() == codecs.H265IDRWNALUType
+		}
+	}
+
 	return false
 }
 

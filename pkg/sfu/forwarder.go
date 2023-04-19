@@ -269,6 +269,12 @@ func (f *Forwarder) DetermineCodec(codec webrtc.RTPCodecCapability, extensions [
 		} else {
 			f.vls = videolayerselector.NewSimulcast(f.logger)
 		}
+	case "video/h265":
+		if f.vls != nil {
+			f.vls = videolayerselector.NewSimulcastFromNull(f.vls)
+		} else {
+			f.vls = videolayerselector.NewSimulcast(f.logger)
+		}
 	case "video/vp9":
 		isDDAvailable := false
 	searchDone:
@@ -1298,6 +1304,10 @@ func (f *Forwarder) Pause(availableLayers []int32, brs Bitrates) VideoAllocation
 func (f *Forwarder) updateAllocation(alloc VideoAllocation, reason string) VideoAllocation {
 	// restrict target temporal to 0 if codec does not support temporal layers
 	if alloc.TargetLayer.IsValid() && strings.ToLower(f.codec.MimeType) == "video/h264" {
+		alloc.TargetLayer.Temporal = 0
+	}
+
+	if alloc.TargetLayer.IsValid() && strings.ToLower(f.codec.MimeType) == "video/h265" {
 		alloc.TargetLayer.Temporal = 0
 	}
 

@@ -389,6 +389,7 @@ func NewConfig(confString string, strictMode bool, c *cli.Context, baseFlags []c
 				{Mime: "audio/red"},
 				{Mime: webrtc.MimeTypeVP8},
 				{Mime: webrtc.MimeTypeH264},
+				{Mime: webrtc.MimeTypeH265},
 				// {Mime: webrtc.MimeTypeAV1},
 				// {Mime: webrtc.MimeTypeVP9},
 			},

@@ -61,6 +61,10 @@ func registerCodecs(me *webrtc.MediaEngine, codecs []*livekit.Codec, rtcpFeedbac
 			PayloadType:        123,
 		},
 		{
+			RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH265, ClockRate: 90000, SDPFmtpLine: "profile-space=0;profile-id=1", RTCPFeedback: rtcpFeedback.Video},
+			PayloadType:        124,
+		},
+		{
 			RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeAV1, ClockRate: 90000, RTCPFeedback: rtcpFeedback.Video},
 			PayloadType:        35,
 		},
